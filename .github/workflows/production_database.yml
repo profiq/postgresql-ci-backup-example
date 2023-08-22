@@ -1,0 +1,34 @@
+name: Production Database - Backup/Restore
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "Choose what you want to do with the database."
+        required: true
+        type: choice
+        default: backup
+        options:
+          - backup
+          - restore
+      file_name:
+        description: "Name of backup file. If you need to restore DB, please provide whole name stored in AWS."
+        required: true
+        type: string
+        default: db_backup
+
+
+jobs:
+  restore:
+    name: ${{ inputs.action }}
+    uses: ./.github/workflows/backup-wf.yml
+    with:
+      PGUSER: default
+      DB_NAME: verceldb
+      R2_BUCKET: backup-test
+      FILE_NAME: ${{ inputs.file_name }}
+      ACTION: ${{ inputs.action }}
+      ACTOR: profiq
+      CLOUDFLARE_R2_ENDPOINT: "https://376adf560a1e8d0a2f48cb79c6631707.r2.cloudflarestorage.com/"
+    secrets: inherit
+

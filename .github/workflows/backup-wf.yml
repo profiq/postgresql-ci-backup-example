@@ -1,0 +1,74 @@
+
+name: Backup Production Database
+
+on:
+  workflow_call:
+    inputs:
+        PGUSER:
+            type: string
+            description: User name to connect to Database
+            required: true
+        DB_NAME:
+            type: string
+            description: Database name
+            required: true
+        ACTION:
+            type: string
+            description: Action of workflow ( restore | backup )
+            required: true
+        R2_BUCKET:
+            type: string
+            description: Name of Bucket 
+            required: true
+        FILE_NAME: 
+            type: string
+            description: File name to backup or whole name of restore file. 
+            required: true
+        CLOUDFLARE_R2_ENDPOINT:
+            type: string
+            description: CloudFlare R2 Bucket url. 
+            required: true
+        ACTOR:
+          type: string
+          description: Github Actor name. 
+          required: true
+  
+jobs:
+  backup:
+    name: ${{ inputs.ACTION }}
+    runs-on: ubuntu-latest
+    permissions:
+      packages: read
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: "ghcr.io"
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Debug 
+        run: echo ${{ secrets.PGHOST }}
+        
+      - name: Run Backup Script
+        run: >
+            docker run -i --rm 
+            -e "PGUSER=${{ inputs.PGUSER }}"
+            -e "PGHOST=${{ secrets.PGHOST }}"
+            -e "PGPASSWORD=${{ secrets.PGPASSWORD }}"
+            -e "DB_NAME=${{ inputs.DB_NAME }}"
+            -e "ACTION=${{ inputs.ACTION }}"
+            -e "R2_BUCKET=${{ inputs.R2_BUCKET }}"
+            -e "FILE_NAME=${{ inputs.FILE_NAME }}"
+            -e "R2_ACCESS_KEY_ID=${{ secrets.R2_ACCESS_KEY_ID }}"
+            -e "R2_SECRET_ACCESS_KEY=${{ secrets.R2_SECRET_ACCESS_KEY }}"
+            -e "R2_DEFAULT_REGION=auto"
+            -e "R2_OUTPUT_FORMAT="json""
+            -e "BACKUP_PUB_KEY=${{ secrets.BACKUP_PUB_KEY }}"  
+            -e "BACKUP_PRIVATE_KEY=${{ secrets.BACKUP_PRIVATE_KEY }}" 
+            -e "R2_ENDPOINT=${{ inputs.CLOUDFLARE_R2_ENDPOINT }}" 
+            "ghcr.io/${{ inputs.ACTOR }}/backuper:main"        # TO DO: Edit ghcr actor 
