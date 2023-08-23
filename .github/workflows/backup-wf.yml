@@ -1,5 +1,5 @@
 
-name: Backup Production Database
+name: Reusable workflow for backup 
 
 on:
   workflow_call:
@@ -51,8 +51,6 @@ jobs:
           registry: "ghcr.io"
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Debug 
-        run: echo ${{ secrets.PGHOST }}
         
       - name: Run Backup Script
         run: >
@@ -71,4 +69,4 @@ jobs:
             -e "BACKUP_PUB_KEY=${{ secrets.BACKUP_PUB_KEY }}"  
             -e "BACKUP_PRIVATE_KEY=${{ secrets.BACKUP_PRIVATE_KEY }}" 
             -e "R2_ENDPOINT=${{ inputs.CLOUDFLARE_R2_ENDPOINT }}" 
-            "ghcr.io/${{ inputs.ACTOR }}/backuper:main"        # TO DO: Edit ghcr actor 
+            "ghcr.io/${{ inputs.ACTOR }}/db_backuper:${{ github.ref_name }}"
